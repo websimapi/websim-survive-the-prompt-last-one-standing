@@ -1,0 +1,90 @@
+{
+  "database": {
+    "schema": {
+      "players": {
+        "id": {
+          "type": "text",
+          "description": "User ID (primary key)"
+        },
+        "username": {
+          "type": "text",
+          "description": "Player username"
+        },
+        "survival_hours": {
+          "type": "numeric",
+          "description": "Hours remaining to survive"
+        },
+        "total_tips": {
+          "type": "integer",
+          "description": "Total credits tipped"
+        },
+        "total_prompts": {
+          "type": "integer",
+          "description": "Total prompts made"
+        },
+        "join_time": {
+          "type": "timestamptz",
+          "description": "When player joined the game"
+        },
+        "last_check": {
+          "type": "timestamptz",
+          "description": "Last time survival status was checked"
+        },
+        "dead": {
+          "type": "boolean",
+          "description": "Whether player is eliminated"
+        },
+        "death_time": {
+          "type": "timestamptz",
+          "description": "When player was eliminated"
+        },
+        "cached_activity_timestamp": {
+          "type": "timestamptz",
+          "description": "Last time activity data was cached"
+        }
+      },
+      "tips": {
+        "id": {
+          "type": "uuid",
+          "description": "Unique tip ID"
+        },
+        "player_id": {
+          "type": "text",
+          "description": "ID of player who tipped"
+        },
+        "amount": {
+          "type": "integer",
+          "description": "Credits tipped"
+        },
+        "timestamp": {
+          "type": "timestamptz",
+          "description": "When tip was made"
+        }
+      },
+      "leaderboard_cache": {
+        "id": {
+          "type": "text",
+          "description": "Cache entry ID"
+        },
+        "top_tippers": {
+          "type": "jsonb",
+          "description": "Cached top tippers data"
+        },
+        "top_prompters": {
+          "type": "jsonb",
+          "description": "Cached top prompters data"
+        },
+        "total_alive": {
+          "type": "integer",
+          "description": "Number of surviving players"
+        },
+        "last_updated": {
+          "type": "timestamptz",
+          "description": "When cache was last updated"
+        }
+      }
+    },
+    "instructions": "This is a survival game database. Players must stay active through prompts and tips to survive. Smart caching is implemented to avoid re-fetching metadata unnecessarily. Use cached_activity_timestamp to determine when to refresh prompt activity data."
+  }
+}
+
