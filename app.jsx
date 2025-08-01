@@ -203,6 +203,51 @@ function SurvivalGame() {
       last_updated: (/* @__PURE__ */ new Date()).toISOString()
     });
   };
+  const joinGame = async () => {
+    if (!currentUser) return;
+    const now = /* @__PURE__ */ new Date();
+    await room.collection("players").upsert({
+      id: currentUser.id,
+      username: currentUser.username,
+      survival_hours: 24,
+      // Start with 24 hours
+      total_tips: 0,
+      total_prompts: 0,
+      join_time: now.toISOString(),
+      last_check: now.toISOString(),
+      dead: false,
+      death_time: null,
+      cached_activity_timestamp: now.toISOString()
+    });
+    await updateLeaderboardCache();
+    setGameState("playing");
+    setTimeLeft(24 * 3600);
+  };
+  const tipToSurvive = async () => {
+    if (!myPlayer || myPlayer.length === 0 || tipAmount < 10) return;
+    try {
+      await window.websim.postComment({
+        content: `Tipping ${tipAmount} credits to survive! \u{1F4B0}\u26A1`,
+        credits: tipAmount
+      });
+    } catch (error) {
+      console.error("Error posting tip comment:", error);
+      const player = myPlayer[0];
+      const hoursToAdd = tipAmount / CREDITS_PER_HOUR;
+      await room.collection("players").upsert({
+        id: currentUser.id,
+        survival_hours: player.survival_hours + hoursToAdd,
+        total_tips: player.total_tips + tipAmount,
+        last_check: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      await room.collection("tips").upsert({
+        player_id: currentUser.id,
+        amount: tipAmount,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      updateLeaderboardCache();
+    }
+  };
   const checkActivity = async () => {
     if (myPlayer && myPlayer.length > 0) {
       await checkAndUpdateActivity(myPlayer[0].id);
@@ -236,11 +281,11 @@ function SurvivalGame() {
   if (gameState === "loading") {
     return /* @__PURE__ */ jsxDEV("div", { className: "min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center", children: /* @__PURE__ */ jsxDEV("div", { className: "text-white text-2xl animate-pulse", children: "Loading..." }, void 0, false, {
       fileName: "<stdin>",
-      lineNumber: 323,
+      lineNumber: 382,
       columnNumber: 17
     }, this) }, void 0, false, {
       fileName: "<stdin>",
-      lineNumber: 322,
+      lineNumber: 381,
       columnNumber: 13
     }, this);
   }
@@ -248,21 +293,21 @@ function SurvivalGame() {
     return /* @__PURE__ */ jsxDEV("div", { className: "min-h-screen bg-gradient-to-br from-red-900 via-gray-900 to-black flex items-center justify-center text-center", children: /* @__PURE__ */ jsxDEV("div", { className: "bg-black/50 backdrop-blur-lg rounded-2xl p-8 max-w-md", children: [
       /* @__PURE__ */ jsxDEV("h1", { className: "text-4xl font-bold text-red-400 mb-4", children: "Season Ended" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 332,
+        lineNumber: 391,
         columnNumber: 21
       }, this),
       /* @__PURE__ */ jsxDEV("p", { className: "text-gray-300", children: "The survival season has concluded. Thank you for playing!" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 333,
+        lineNumber: 392,
         columnNumber: 21
       }, this)
     ] }, void 0, true, {
       fileName: "<stdin>",
-      lineNumber: 331,
+      lineNumber: 390,
       columnNumber: 17
     }, this) }, void 0, false, {
       fileName: "<stdin>",
-      lineNumber: 330,
+      lineNumber: 389,
       columnNumber: 13
     }, this);
   }
@@ -270,12 +315,12 @@ function SurvivalGame() {
     /* @__PURE__ */ jsxDEV("header", { className: "text-center mb-8", children: [
       /* @__PURE__ */ jsxDEV("h1", { className: "text-5xl font-bold text-white mb-2 glow-text", children: "Survive the Prompt" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 343,
+        lineNumber: 402,
         columnNumber: 21
       }, this),
       /* @__PURE__ */ jsxDEV("p", { className: "text-xl text-gray-300 mb-4", children: "Last One Standing Wins" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 346,
+        lineNumber: 405,
         columnNumber: 21
       }, this),
       /* @__PURE__ */ jsxDEV("div", { className: "text-lg text-yellow-400", children: [
@@ -284,44 +329,44 @@ function SurvivalGame() {
         " days"
       ] }, void 0, true, {
         fileName: "<stdin>",
-        lineNumber: 347,
+        lineNumber: 406,
         columnNumber: 21
       }, this)
     ] }, void 0, true, {
       fileName: "<stdin>",
-      lineNumber: 342,
+      lineNumber: 401,
       columnNumber: 17
     }, this),
     gameState === "not_joined" && /* @__PURE__ */ jsxDEV("div", { className: "max-w-2xl mx-auto", children: /* @__PURE__ */ jsxDEV("div", { className: "bg-black/30 backdrop-blur-lg rounded-3xl p-8 text-center border border-purple-500/30", children: [
       /* @__PURE__ */ jsxDEV("h2", { className: "text-3xl font-bold text-white mb-6", children: "Enter the Arena" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 355,
+        lineNumber: 414,
         columnNumber: 29
       }, this),
       /* @__PURE__ */ jsxDEV("div", { className: "space-y-4 text-gray-300 mb-8", children: [
         /* @__PURE__ */ jsxDEV("p", { children: "\u{1F3AF} Start with 24 hours to survive" }, void 0, false, {
           fileName: "<stdin>",
-          lineNumber: 357,
+          lineNumber: 416,
           columnNumber: 33
         }, this),
         /* @__PURE__ */ jsxDEV("p", { children: "\u{1F4B0} +1 hour for every 10 credits tipped" }, void 0, false, {
           fileName: "<stdin>",
-          lineNumber: 358,
+          lineNumber: 417,
           columnNumber: 33
         }, this),
         /* @__PURE__ */ jsxDEV("p", { children: "\u26A1 +10 minutes for every prompt since last check" }, void 0, false, {
           fileName: "<stdin>",
-          lineNumber: 359,
+          lineNumber: 418,
           columnNumber: 33
         }, this),
         /* @__PURE__ */ jsxDEV("p", { children: "\u{1F480} Reach 0 hours without activity = Game Over" }, void 0, false, {
           fileName: "<stdin>",
-          lineNumber: 360,
+          lineNumber: 419,
           columnNumber: 33
         }, this)
       ] }, void 0, true, {
         fileName: "<stdin>",
-        lineNumber: 356,
+        lineNumber: 415,
         columnNumber: 29
       }, this),
       /* @__PURE__ */ jsxDEV(
@@ -335,18 +380,18 @@ function SurvivalGame() {
         false,
         {
           fileName: "<stdin>",
-          lineNumber: 362,
+          lineNumber: 421,
           columnNumber: 29
         },
         this
       )
     ] }, void 0, true, {
       fileName: "<stdin>",
-      lineNumber: 354,
+      lineNumber: 413,
       columnNumber: 25
     }, this) }, void 0, false, {
       fileName: "<stdin>",
-      lineNumber: 353,
+      lineNumber: 412,
       columnNumber: 21
     }, this),
     gameState === "playing" && /* @__PURE__ */ jsxDEV("div", { className: "grid lg:grid-cols-3 gap-8", children: [
@@ -354,13 +399,13 @@ function SurvivalGame() {
         /* @__PURE__ */ jsxDEV("div", { className: "bg-black/30 backdrop-blur-lg rounded-3xl p-8 border border-purple-500/30 mb-6", children: [
           /* @__PURE__ */ jsxDEV("h2", { className: "text-2xl font-bold text-white mb-4", children: "Your Survival Status" }, void 0, false, {
             fileName: "<stdin>",
-            lineNumber: 377,
+            lineNumber: 436,
             columnNumber: 33
           }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "text-center", children: [
             /* @__PURE__ */ jsxDEV("div", { className: `text-6xl font-bold mb-4 ${timeLeft < 3600 ? "text-red-400 animate-pulse" : timeLeft < 7200 ? "text-yellow-400" : "text-green-400"}`, children: formatTime(timeLeft) }, void 0, false, {
               fileName: "<stdin>",
-              lineNumber: 379,
+              lineNumber: 438,
               columnNumber: 37
             }, this),
             /* @__PURE__ */ jsxDEV("div", { className: "w-full bg-gray-700 rounded-full h-4 mb-6", children: /* @__PURE__ */ jsxDEV(
@@ -373,67 +418,67 @@ function SurvivalGame() {
               false,
               {
                 fileName: "<stdin>",
-                lineNumber: 383,
+                lineNumber: 442,
                 columnNumber: 41
               },
               this
             ) }, void 0, false, {
               fileName: "<stdin>",
-              lineNumber: 382,
+              lineNumber: 441,
               columnNumber: 37
             }, this)
           ] }, void 0, true, {
             fileName: "<stdin>",
-            lineNumber: 378,
+            lineNumber: 437,
             columnNumber: 33
           }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "grid grid-cols-2 gap-4 text-center", children: [
             /* @__PURE__ */ jsxDEV("div", { children: [
               /* @__PURE__ */ jsxDEV("div", { className: "text-2xl font-bold text-blue-400", children: myPlayer?.[0]?.total_tips || 0 }, void 0, false, {
                 fileName: "<stdin>",
-                lineNumber: 392,
+                lineNumber: 451,
                 columnNumber: 41
               }, this),
               /* @__PURE__ */ jsxDEV("div", { className: "text-gray-400", children: "Credits Tipped" }, void 0, false, {
                 fileName: "<stdin>",
-                lineNumber: 395,
+                lineNumber: 454,
                 columnNumber: 41
               }, this)
             ] }, void 0, true, {
               fileName: "<stdin>",
-              lineNumber: 391,
+              lineNumber: 450,
               columnNumber: 37
             }, this),
             /* @__PURE__ */ jsxDEV("div", { children: [
               /* @__PURE__ */ jsxDEV("div", { className: "text-2xl font-bold text-purple-400", children: myPlayer?.[0]?.total_prompts || 0 }, void 0, false, {
                 fileName: "<stdin>",
-                lineNumber: 398,
+                lineNumber: 457,
                 columnNumber: 41
               }, this),
               /* @__PURE__ */ jsxDEV("div", { className: "text-gray-400", children: "Prompts Made" }, void 0, false, {
                 fileName: "<stdin>",
-                lineNumber: 401,
+                lineNumber: 460,
                 columnNumber: 41
               }, this)
             ] }, void 0, true, {
               fileName: "<stdin>",
-              lineNumber: 397,
+              lineNumber: 456,
               columnNumber: 37
             }, this)
           ] }, void 0, true, {
             fileName: "<stdin>",
-            lineNumber: 390,
+            lineNumber: 449,
             columnNumber: 33
           }, this)
         ] }, void 0, true, {
           fileName: "<stdin>",
-          lineNumber: 376,
+          lineNumber: 435,
           columnNumber: 29
         }, this),
         /* @__PURE__ */ jsxDEV("div", { className: "bg-black/30 backdrop-blur-lg rounded-3xl p-8 border border-green-500/30", children: [
           /* @__PURE__ */ jsxDEV("h3", { className: "text-xl font-bold text-white mb-4", children: "\u{1F4B0} Tip to Extend Life" }, void 0, false, {
             fileName: "<stdin>",
-            lineNumber: 408,
+            lineNumber: 467,
             columnNumber: 33
           }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "flex items-center space-x-4", children: [
@@ -452,7 +497,7 @@ function SurvivalGame() {
               false,
               {
                 fileName: "<stdin>",
-                lineNumber: 410,
+                lineNumber: 469,
                 columnNumber: 37
               },
               this
@@ -463,7 +508,7 @@ function SurvivalGame() {
               "h"
             ] }, void 0, true, {
               fileName: "<stdin>",
-              lineNumber: 419,
+              lineNumber: 478,
               columnNumber: 37
             }, this),
             /* @__PURE__ */ jsxDEV(
@@ -477,36 +522,36 @@ function SurvivalGame() {
               false,
               {
                 fileName: "<stdin>",
-                lineNumber: 422,
+                lineNumber: 481,
                 columnNumber: 37
               },
               this
             )
           ] }, void 0, true, {
             fileName: "<stdin>",
-            lineNumber: 409,
+            lineNumber: 468,
             columnNumber: 33
           }, this),
           /* @__PURE__ */ jsxDEV("p", { className: "text-sm text-gray-400 mt-2", children: "Every 10 credits = 1 hour of survival time" }, void 0, false, {
             fileName: "<stdin>",
-            lineNumber: 429,
+            lineNumber: 488,
             columnNumber: 33
           }, this)
         ] }, void 0, true, {
           fileName: "<stdin>",
-          lineNumber: 407,
+          lineNumber: 466,
           columnNumber: 29
         }, this)
       ] }, void 0, true, {
         fileName: "<stdin>",
-        lineNumber: 375,
+        lineNumber: 434,
         columnNumber: 25
       }, this),
       /* @__PURE__ */ jsxDEV("div", { className: "space-y-6", children: [
         /* @__PURE__ */ jsxDEV("div", { className: "bg-black/30 backdrop-blur-lg rounded-3xl p-6 border border-yellow-500/30", children: [
           /* @__PURE__ */ jsxDEV("h3", { className: "text-xl font-bold text-yellow-400 mb-4", children: "\u{1F3C6} Top Tippers" }, void 0, false, {
             fileName: "<stdin>",
-            lineNumber: 438,
+            lineNumber: 497,
             columnNumber: 33
           }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "space-y-2", children: leaderboardData?.[0]?.top_tippers?.slice(0, 5).map((player, index) => /* @__PURE__ */ jsxDEV("div", { className: "flex justify-between items-center text-sm", children: [
@@ -516,32 +561,32 @@ function SurvivalGame() {
               player.username
             ] }, void 0, true, {
               fileName: "<stdin>",
-              lineNumber: 442,
+              lineNumber: 501,
               columnNumber: 45
             }, this),
             /* @__PURE__ */ jsxDEV("span", { className: "text-yellow-400 font-bold", children: player.total_tips }, void 0, false, {
               fileName: "<stdin>",
-              lineNumber: 445,
+              lineNumber: 504,
               columnNumber: 45
             }, this)
           ] }, player.id, true, {
             fileName: "<stdin>",
-            lineNumber: 441,
+            lineNumber: 500,
             columnNumber: 41
           }, this)) }, void 0, false, {
             fileName: "<stdin>",
-            lineNumber: 439,
+            lineNumber: 498,
             columnNumber: 33
           }, this)
         ] }, void 0, true, {
           fileName: "<stdin>",
-          lineNumber: 437,
+          lineNumber: 496,
           columnNumber: 29
         }, this),
         /* @__PURE__ */ jsxDEV("div", { className: "bg-black/30 backdrop-blur-lg rounded-3xl p-6 border border-purple-500/30", children: [
           /* @__PURE__ */ jsxDEV("h3", { className: "text-xl font-bold text-purple-400 mb-4", children: "\u26A1 Top Prompters" }, void 0, false, {
             fileName: "<stdin>",
-            lineNumber: 454,
+            lineNumber: 513,
             columnNumber: 33
           }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "space-y-2", children: leaderboardData?.[0]?.top_prompters?.slice(0, 5).map((player, index) => /* @__PURE__ */ jsxDEV("div", { className: "flex justify-between items-center text-sm", children: [
@@ -551,75 +596,75 @@ function SurvivalGame() {
               player.username
             ] }, void 0, true, {
               fileName: "<stdin>",
-              lineNumber: 458,
+              lineNumber: 517,
               columnNumber: 45
             }, this),
             /* @__PURE__ */ jsxDEV("span", { className: "text-purple-400 font-bold", children: player.total_prompts }, void 0, false, {
               fileName: "<stdin>",
-              lineNumber: 461,
+              lineNumber: 520,
               columnNumber: 45
             }, this)
           ] }, player.id, true, {
             fileName: "<stdin>",
-            lineNumber: 457,
+            lineNumber: 516,
             columnNumber: 41
           }, this)) }, void 0, false, {
             fileName: "<stdin>",
-            lineNumber: 455,
+            lineNumber: 514,
             columnNumber: 33
           }, this)
         ] }, void 0, true, {
           fileName: "<stdin>",
-          lineNumber: 453,
+          lineNumber: 512,
           columnNumber: 29
         }, this),
         /* @__PURE__ */ jsxDEV("div", { className: "bg-black/30 backdrop-blur-lg rounded-3xl p-6 border border-blue-500/30", children: [
           /* @__PURE__ */ jsxDEV("h3", { className: "text-xl font-bold text-blue-400 mb-4", children: "\u{1F4CA} Game Stats" }, void 0, false, {
             fileName: "<stdin>",
-            lineNumber: 470,
+            lineNumber: 529,
             columnNumber: 33
           }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "space-y-2 text-sm", children: [
             /* @__PURE__ */ jsxDEV("div", { className: "flex justify-between", children: [
               /* @__PURE__ */ jsxDEV("span", { className: "text-gray-300", children: "Survivors" }, void 0, false, {
                 fileName: "<stdin>",
-                lineNumber: 473,
+                lineNumber: 532,
                 columnNumber: 41
               }, this),
               /* @__PURE__ */ jsxDEV("span", { className: "text-green-400 font-bold", children: leaderboardData?.[0]?.total_alive || 0 }, void 0, false, {
                 fileName: "<stdin>",
-                lineNumber: 474,
+                lineNumber: 533,
                 columnNumber: 41
               }, this)
             ] }, void 0, true, {
               fileName: "<stdin>",
-              lineNumber: 472,
+              lineNumber: 531,
               columnNumber: 37
             }, this),
             /* @__PURE__ */ jsxDEV("div", { className: "flex justify-between", children: [
               /* @__PURE__ */ jsxDEV("span", { className: "text-gray-300", children: "Total Players" }, void 0, false, {
                 fileName: "<stdin>",
-                lineNumber: 479,
+                lineNumber: 538,
                 columnNumber: 41
               }, this),
               /* @__PURE__ */ jsxDEV("span", { className: "text-blue-400 font-bold", children: players?.length || 0 }, void 0, false, {
                 fileName: "<stdin>",
-                lineNumber: 480,
+                lineNumber: 539,
                 columnNumber: 41
               }, this)
             ] }, void 0, true, {
               fileName: "<stdin>",
-              lineNumber: 478,
+              lineNumber: 537,
               columnNumber: 37
             }, this)
           ] }, void 0, true, {
             fileName: "<stdin>",
-            lineNumber: 471,
+            lineNumber: 530,
             columnNumber: 33
           }, this)
         ] }, void 0, true, {
           fileName: "<stdin>",
-          lineNumber: 469,
+          lineNumber: 528,
           columnNumber: 29
         }, this),
         /* @__PURE__ */ jsxDEV(
@@ -633,30 +678,30 @@ function SurvivalGame() {
           false,
           {
             fileName: "<stdin>",
-            lineNumber: 487,
+            lineNumber: 546,
             columnNumber: 29
           },
           this
         )
       ] }, void 0, true, {
         fileName: "<stdin>",
-        lineNumber: 436,
+        lineNumber: 495,
         columnNumber: 25
       }, this)
     ] }, void 0, true, {
       fileName: "<stdin>",
-      lineNumber: 373,
+      lineNumber: 432,
       columnNumber: 21
     }, this),
     gameState === "dead" && /* @__PURE__ */ jsxDEV("div", { className: "max-w-2xl mx-auto text-center", children: /* @__PURE__ */ jsxDEV("div", { className: "bg-black/50 backdrop-blur-lg rounded-3xl p-8 border border-red-500/50", children: [
       /* @__PURE__ */ jsxDEV("h2", { className: "text-4xl font-bold text-red-400 mb-4", children: "\u{1F480} You Didn't Survive" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 500,
+        lineNumber: 559,
         columnNumber: 29
       }, this),
       /* @__PURE__ */ jsxDEV("p", { className: "text-xl text-gray-300 mb-6", children: "Your survival time ran out. Better luck next season!" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 501,
+        lineNumber: 560,
         columnNumber: 29
       }, this),
       /* @__PURE__ */ jsxDEV("div", { className: "text-gray-400", children: [
@@ -665,31 +710,31 @@ function SurvivalGame() {
         " days"
       ] }, void 0, true, {
         fileName: "<stdin>",
-        lineNumber: 504,
+        lineNumber: 563,
         columnNumber: 29
       }, this)
     ] }, void 0, true, {
       fileName: "<stdin>",
-      lineNumber: 499,
+      lineNumber: 558,
       columnNumber: 25
     }, this) }, void 0, false, {
       fileName: "<stdin>",
-      lineNumber: 498,
+      lineNumber: 557,
       columnNumber: 21
     }, this)
   ] }, void 0, true, {
     fileName: "<stdin>",
-    lineNumber: 341,
+    lineNumber: 400,
     columnNumber: 13
   }, this) }, void 0, false, {
     fileName: "<stdin>",
-    lineNumber: 340,
+    lineNumber: 399,
     columnNumber: 9
   }, this);
 }
 const root = createRoot(document.getElementById("root"));
 root.render(/* @__PURE__ */ jsxDEV(SurvivalGame, {}, void 0, false, {
   fileName: "<stdin>",
-  lineNumber: 516,
+  lineNumber: 575,
   columnNumber: 13
 }));
